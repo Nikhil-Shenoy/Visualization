@@ -1,0 +1,312 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<script type="text/javascript" src="RGraph.common.core.js"></script>
+<script type="text/javascript" src="RGraph.common.effects.js"></script>
+<script type="text/javascript" src="RGraph.common.context.js"></script>
+<script type="text/javascript" src="RGraph.hprogress.js"></script>
+<script type="text/javascript" src="RGraph.line.js"></script>
+<script type="text/javascript" src="file:///home/nikhil/Documents/Winlab/Visualization/RGraph/RGraph/libraries/RGraph.bar.js"></script>
+<script type="text/javascript" src="file:///home/nikhil/Documents/Winlab/Visualization/RGraph/RGraph/libraries/RGraph.common.key.js"></script>
+<script type="text/javascript" src="file:///home/nikhil/Documents/Winlab/Visualization/RGraph/RGraph/libraries/RGraph.common.resizing.js"></script>
+<script type="text/javascript" src="canvasStack1v04.js"></script>
+<script type="text/javascript" src="jquery-1.10.0.min.js"></script>
+<script type="text/javascript" src="chroma.js"></script>
+<script type="text/javascript" src="spectrumanalyzer.js"></script>
+<link href="style.css" type="text/css" rel="stylesheet" />
+
+<title>Untitled Document</title>
+</head>
+
+<body>
+    <div class="content">
+        <div class="top_block title">
+            <div class="content">
+              <div id="header" style="background-color:#FFA500;">
+                <h1 style="margin-bottom:0;" align="center">DARPA Spectrum Challenge Monitor</h1>
+              </div>
+            </div>
+        </div>
+        <div class="top_block content">
+          <div class="left_block left">
+            <div class="top_block team-progress">
+              <TABLE cellpadding="0" width="100%">
+                <TR>
+                  <TD align="left"><canvas id="A-tr-prog" width="500" height="70">[No canvas support]</canvas></TD>
+                  <TD align="center"><div class="numdisp"><span>Bytes:<BR /><span id="abytes">0</span></span></div></TD>
+               </TR><TR>
+                  <TD align="left"><canvas id="A-rc-prog" width="500" height="70">[No canvas support]</canvas></TD>
+                  <TD align="center" width="100px"><div><span class="numdisp">Time(msec):<BR /><span id="asec">0.0</span></span></div></TD>
+               </TR>
+              </TABLE>
+            </div>
+            <div class="top_block team-progress">
+              <TABLE cellpadding="0" width="100%">
+                <TR>
+                  <TD align="left"><canvas id="B-tr-prog" width="500" height="70">[No canvas support]</canvas></TD>
+                  <TD align="center"><div class="numdisp"><span>Bytes:<BR /><span id="bbytes">0</span></span></div></TD>
+               </TR><TR>
+                  <TD align="left"><canvas id="B-rc-prog" width="500" height="70">[No canvas support]</canvas></TD>
+                  <TD align="center" width="100px"><div class="numdisp"><span>Time(msec):<BR /><span id="bsec">0.0</span></span></div></TD>
+               </TR>
+              </TABLE>
+            </div> 
+            <div class="top_block team-progress">
+              <TABLE cellpadding="0" width="100%">
+                <TR>
+                  <TD align="left"><canvas id="C-tr-prog" width="500" height="70">[No canvas support]</canvas></TD>
+                  <TD align="center"><div class="numdisp"><span>Bytes:<BR /><span id="cbytes">0</span></span></div></TD>
+               </TR><TR>
+                  <TD align="left"><canvas id="C-rc-prog" width="500" height="70">[No canvas support]</canvas></TD>
+                  <TD align="center" width="100px"><div class="numdisp"><span>Time(msec):<BR /><span id="csec">0.0</span></span></div></TD>
+               </TR>
+              </TABLE>
+            </div>
+          </div>
+          <div class="right_block right">
+             <div class="graph" align="center">
+                <canvas id="pr-graph" width="570" height="450">[No canvas support]</canvas>
+                <div class="bottom_block bottom counter">
+                   <span class="left_block">File size: <span id="file_size">0</span> (bytes)</span>
+                   <span class="right_block"> Number of updates: <span id="num_updates">0</span></span>
+                </div>
+             </div>
+          </div>
+        </div>
+
+	<div class="graph" align="center">
+		<canvas id="channelStatus" width="1000" height="500" align="center">[No canvas support]</canvas>
+	</div>
+        <div class="top_block content">
+          <div class="left_block left">
+            <div class="content SA" id="SA1">
+            </div>
+          </div>
+          <div class="right_block right">
+            <div class="content SA" id="SA2">
+           </div>
+          </div>
+    </div>
+
+    <script type="text/javascript">
+    
+       var body = document.getElementsByTagName("body")[0];
+       var cntext = new webkitAudioContext();
+       var audioBuffer;
+       var sourceNode;
+       var analyser;
+       var javascriptNode;
+
+	//var Channel = "I'm testing a global variable";
+
+       var sa1 = new SpectrumAnalyzer( 1, 'SA1', "ws://console.sb6.orbit-lab.org:6101", "ws://console.sb6.orbit-lab.org:6100");
+       var sa2 = new SpectrumAnalyzer( 2, 'SA2', "ws://console.sb6.orbit-lab.org:6103", "ws://console.sb6.orbit-lab.org:6102");
+       //var sa3 = new SpectrumAnalyzer( 3, 'SA3', "ws://console.sb6.orbit-lab.org:6105", "ws://console.sb6.orbit-lab.org:6104");
+       var atrprogress = createProgressBar('A-tr-prog','TEAM A Draw', 'light green');
+       var arcprogress = createProgressBar('A-rc-prog','TEAM A Submit', 'light green');
+       var btrprogress = createProgressBar('B-tr-prog','TEAM B Draw', 'light blue');
+       var brcprogress = createProgressBar('B-rc-prog','TEAM B Submit', 'light blue');
+       var ctrprogress = createProgressBar('C-tr-prog','TEAM C Draw', 'light red');
+       var crcprogress = createProgressBar('C-rc-prog','TEAM C Submit', 'light red');
+//	   var ps = packetServerClient("ws://console.sb6.orbit-lab.org:6110");
+	   var ov1 = 0; var ov2 = 0; var ov3 = 0;
+
+	grapher();
+
+
+
+	function myGraph()
+        {
+                
+               var data = [Round(Math.random()),Round(Math.random()),Round(Math.random()),Round(Math.random()),Round(Math.random()),Round(Math.random()),Round(Math.random())]; 
+
+        
+                var bar = new RGraph.Bar('channelStatus', data);
+                bar.Set('labels', ['1','2','3','4','5','6','7','8']);
+                bar.Set('gutter.left', 50);
+		bar.Set('gutter.bottom', 40);
+                bar.Set('ymax',2);
+                bar.Set('ymin',0);
+                bar.Set('scale.decimals',1);
+                bar.Set('title','Channel Status');
+                bar.Set('title.yaxis','Status (1 is on, 0 is off)');
+                bar.Set('title.xaxis','Channel Number');
+                bar.Set('title.xaxis.pos',.1);
+                bar.Set('background.color','white');
+        //      bar.Set('colors', ['Gradient(#a33:red)']);
+                bar.Set('colors', ['red']);
+
+		bar.Set('key',['Occupied','Unoccupied']);
+
+//              ba.getShapeByX(2).Set('colors',barColor(data[0]));
+
+                bar.Draw();
+        
+               // console.log(data);
+        }
+	
+	function grapher()
+	{
+		setInterval('myGraph();',1000);
+	}
+
+	function Round(num)
+	{
+		if(num > .5)
+			return 1;
+		else if(num < .5)
+			return 0;
+	}
+	
+		 
+       function packetServerClient( url )
+       { 
+
+         if ("WebSocket" in window)
+         {
+           // Let us open a web socket
+           //var ws = new WebSocket("ws://console.sb3.orbit-lab.org:5123", 'base64');
+		   var ps = new WebSocket(url, 'binary');
+		   ps.binaryType = "arraybuffer";
+           ps.onmessage = function (evt) 
+           {    
+		      //var array = window.atob(evt.data);
+			  if(evt.data instanceof ArrayBuffer) {
+			    var array = new Int32Array(evt.data);
+				setBarValue( atrprogress, array[0], array[6] )
+				setBarValue( arcprogress, array[1], array[6] )
+				document.getElementById("abytes").innerHTML = array[1];
+				document.getElementById("asec").innerHTML = array[2];
+				setBarValue( btrprogress, array[3], array[6] )
+				setBarValue( brcprogress, array[4], array[6] )
+				document.getElementById("bbytes").innerHTML = array[4];
+				document.getElementById("bsec").innerHTML = array[5];
+				document.getElementById("file_size").innerHTML = array[6];
+			  }
+           } 
+           ps.onclose = function()
+           { 
+             // websocket is closed.
+             alert("PS Connection is closed..."); 
+           };
+		   return (ps);
+          }
+          else {
+            // The browser doesn't support WebSocket
+            alert("WebSocket NOT supported by your Browser!");
+          }	
+       }
+
+      // log if an error occurs
+      function onError(e) {
+        console.log(e);
+      }
+
+      function setBarValue( bar, val, vmax )
+	  {
+		    bar.value = (val/vmax)*100;
+            RGraph.Effects.HProgress.Grow(bar);
+	  }
+	  
+      function createProgressBar(id, title, color)
+      {
+         var pb = new RGraph.HProgress(id,0,100,0)
+             .Set('tickmarks', 100)
+             .Set('numticks', 20)
+             .Set('gutter.right', 30)
+             .Set('margin', 2)
+			 .Set('chart.title',title)
+//			 .Set('chart.colors', [color])
+             .Draw();
+         return pb;
+      }
+        
+      window.onload = function (e)
+      {
+         d1  = []; d2 = []; d3 = [];
+         l   = 0; // The letter 'L' - NOT a one   
+         // Pre-pad the arrays with null values
+         for (var i=0; i<600; ++i) {
+            d1.push(null); d2.push(null); d3.push(null);
+         }
+       
+         var obj = null;
+         function getGraph(id, d1)
+         {
+            // After creating the chart, store it on the global window object
+            if (!obj) {
+               obj = new RGraph.Line(id, d1)
+                 .Set('chart.xticks', 100)
+                 .Set('chart.background.barcolor1', 'white')
+                 .Set('chart.background.barcolor2', 'white')
+                 .Set('chart.title.xaxis', 'Time >>>')
+                 .Set('chart.title.yaxis', 'Throughput')
+                 .Set('chart.title.vpos', 0.5)
+                 .Set('chart.title', 'One Second Throughput (MB/s)')
+                 .Set('chart.title.yaxis.pos', 0.5)
+                 .Set('chart.title.xaxis.pos', 0.5)
+                 .Set('chart.colors', ['black'])
+                 .Set('chart.linewidth',0.5)
+                 .Set('chart.yaxispos', 'right')
+                 .Set('chart.ymax', 50)
+                 .Set('chart.xticks', 25)
+                 .Set('chart.filled', true);
+                  
+                 var grad = obj.context.createLinearGradient(0,0,0,250);
+                 grad.addColorStop(0, '#efefef');
+                 grad.addColorStop(0.9, 'rgba(0,0,0,0)');
+
+                 obj.Set('chart.fillstyle', [grad]);
+			}
+            return obj;
+         }
+		 
+		 function timerTrigger()
+		 {
+             document.getElementById("num_updates").innerHTML = parseInt(document.getElementById("num_updates").innerHTML) + 1;
+			 //if (ps.readyState == 1) ps.send("1");
+			 sa1.update();
+			 sa2.update();
+			 //sa3.update();
+			 drawGraph(ov1,ov2,ov3);
+			 if (ISIE8) {
+                 alert('[MSIE] Sorry, Internet Explorer 8 is not fast enough to support animated charts');
+             } else {
+                setTimeout(timerTrigger, 100);
+             }
+		 }
+        
+         function drawGraph( v1, v2, v3)
+         {
+            // "cache" this in a local variable
+			var rg = RGraph;
+            RGraph.Clear(document.getElementById("pr-graph"));    
+            var graph = getGraph('pr-graph', d1);
+            graph.Draw();
+/*
+            // Add some data to the data arrays
+            var r1 = RGraph.random(
+               _RG.is_null(d1[d1.length - 1]) ? 26 : d1[d1.length - 1] - 2,
+               _RG.is_null(d1[d1.length - 1]) ? 24 : d1[d1.length - 1] + 2
+            );
+            r1 = Math.max(r1, 0);
+            r1 = Math.min(r1, 50);
+*/
+            d1.push(v1); if (d1.length > 600) {d1 = rg.array_shift(d1);}
+			obj.original_data[0] = d1;
+			//d2.push(v2); if (d1.length > 600) {d2 = rg.array_shift(d2);}
+			//obj.original_data[1] = d2;
+			//d3.push(v3); if (d3.length > 600) {d3 = rg.array_shift(d3);}
+			//obj.original_data[2] = d3;
+         }
+     
+		timerTrigger();
+
+       }
+    </script>
+    
+</body>
+</html>
+
